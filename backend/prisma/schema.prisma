@@ -1,0 +1,52 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id Int @id @default(autoincrement())
+  username String @unique
+  email String @unique
+  name String
+  passwordHash String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  goodDeeds GoodDeed[]
+  friends Friendship[] @relation("UserFriends")
+  friendsOf Friendship[] @relation("FriendOf")
+}
+
+model GoodDeed {
+  id Int @id @default(autoincrement())
+  title String
+  description String?
+  status Boolean @default(false)
+  ownerId Int
+  createdAt DateTime @default(now())
+  completedAt DateTime?
+
+  owner User @relation(fields: [ownerId], references: [id])
+}
+
+model Friendship {
+  id Int @id @default(autoincrement())
+  userId Int
+  friendId Int
+  createdAt DateTime @default(now())
+
+  user User @relation("UserFriends", fields: [userId], references: [id])
+  friend User @relation("FriendOf", fields: [friendId], references: [id])
+
+  @@unique([userId, friendId])
+  @@index([userId])
+  @@index([friendId])
+}
