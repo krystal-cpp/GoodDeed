@@ -23,8 +23,20 @@ services:
       PORT: 3000
       JWT_SECRET: ${JWT_SECRET}
       DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public"
+      FRONTEND_URL: ${FRONTEND_URL}
     depends_on:
       - postgres
-
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    container_name: deeds-frontend
+    restart: always
+    ports:
+      - "${FRONTEND_PORT}:4000"
+    depends_on:
+      - backend
 volumes:
   postgres_data:
