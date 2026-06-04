@@ -44,4 +44,11 @@ export const friendsAPI = {
         api.get(`/friends/${friendId}/deeds`)
 };
 
+export const usersAPI = {
+    getProfile: () => api.get('/users/profile'),
+    updateProfile: (data: { username?: string, email?: string, name?: string, password?: string }) => 
+        api.put('/users/profile', data),
+    deleteProfile: () => api.delete('/users/profile')
+};
+
 export default api;
