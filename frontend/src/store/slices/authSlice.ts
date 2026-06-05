@@ -14,7 +14,6 @@ const initialState: AuthState = {
     loading: false,
     error: null,
     initialized: false,
-    validationErrors: null
 };
 
 export const register = createAsyncThunk(
@@ -102,7 +101,6 @@ const authSlice = createSlice({
         },
         clearError: (state) => {
             state.error = null;
-            state.validationErrors = null;
         },
         updateUserData: (state, action) => {
             state.user = {
@@ -118,7 +116,6 @@ const authSlice = createSlice({
         builder.addCase(register.pending, (state) => {
             state.loading = true;
             state.error = null;
-            state.validationErrors = null;
         });
         builder.addCase(register.fulfilled, (state, action) => {
             state.loading = false;
@@ -132,7 +129,6 @@ const authSlice = createSlice({
         builder.addCase(register.rejected, (state, action: any) => {
             state.loading = false;
             if(action.payload?.type === 'validation') {
-                state.validationErrors = action.payload.errors;
             }
             else {
                 state.error = action.payload?.message || 'Ошибка регистрации';
@@ -142,7 +138,6 @@ const authSlice = createSlice({
         builder.addCase(login.pending, (state) => {
             state.loading = true;
             state.error = null;
-            state.validationErrors = null;
         });
         builder.addCase(login.fulfilled, (state, action) => {
             state.loading = false;

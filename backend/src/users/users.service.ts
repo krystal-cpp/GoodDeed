@@ -5,7 +5,7 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-    constructor(private prisma: PrismaService) {}
+    constructor(private prisma: PrismaService) { }
 
     async findAll() {
         return this.prisma.user.findMany({
@@ -32,7 +32,7 @@ export class UsersService {
             }
         });
 
-        if(!user) throw new NotFoundException('User not found');
+        if (!user) throw new NotFoundException('User not found');
 
         return user;
     }
@@ -49,28 +49,38 @@ export class UsersService {
             }
         });
 
-        if(!user) throw new NotFoundException('User not found');
+        if (!user) throw new NotFoundException('User not found');
     }
 
     async update(id: number, dto: UpdateUserDTO) {
         await this.findById(id);
 
-        if(dto.username || dto.email) {
-            const existingUser = await this.prisma.user.findFirst({
+        if (dto.username) {
+            const existingUsername = await this.prisma.user.findFirst({
                 where: {
-                    OR: [
-                        dto.username ? { username: dto.username }: {},
-                        dto.email ? { email: dto.email }: {},
-                    ],
-                    NOT: { id },
+                    username: dto.username,
+                    id: { not: id }
                 },
             });
+            if (existingUsername) {
+                throw new ConflictException('Username already exists');
+            }
+        }
 
-            if(existingUser) throw new ConflictException('Username or email already exists');
+        if (dto.email) {
+            const existingEmail = await this.prisma.user.findFirst({
+                where: {
+                    email: dto.email,
+                    id: { not: id }
+                },
+            });
+            if (existingEmail) {
+                throw new ConflictException('Email already exists');
+            }
         }
 
         const data: any = { ...dto };
-        if(dto.password) {
+        if (dto.password) {
             data.passwordHash = await bcrypt.hash(dto.password, 10);
             delete data.password;
         }

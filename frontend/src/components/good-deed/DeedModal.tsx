@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { GoodDeed } from "@/types";
+import { deedSchema } from '@/lib/validation';
+import { useFormValidation } from '@/hooks/useFormValidation';
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 
@@ -18,6 +20,16 @@ export default function DeedModal({ isOpen, onClose, onSubmit, deed, loading, er
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
 
+    const { getFieldError, validate } = useFormValidation({
+        schema: deedSchema,
+        onSuccess: (data) => {
+            onSubmit({
+                title: data.title,
+                description: data.description || undefined
+            });
+        }
+    });
+
     useEffect(() => {
         if (deed) {
             setTitle(deed.title);
@@ -33,32 +45,7 @@ export default function DeedModal({ isOpen, onClose, onSubmit, deed, loading, er
 
     const handleSubmit = (e: React.SubmitEvent) => {
         e.preventDefault();
-        onSubmit({ title, description: description || undefined });
-    };
-
-    const getFieldError = (field: string): string | undefined => {
-        if (!errors || errors.length === 0) return undefined;
-
-        const error = errors.find(e => {
-            const lowerError = e.toLowerCase();
-            return lowerError.includes(field.toLowerCase());
-        });
-
-        if (!error) return undefined;
-
-        if (error.includes('longer than or equal to')) {
-            const min = error.match(/\d+/)?.[0];
-            return `Минимальная длина: ${min} символов`;
-        }
-        if (error.includes('shorter than or equal to')) {
-            const max = error.match(/\d+/)?.[0];
-            return `Максимальная длина: ${max} символов`;
-        }
-        if (error.includes('should not be empty')) {
-            return 'Обязательное поле';
-        }
-
-        return error;
+        validate({ title, description });
     };
 
     return (

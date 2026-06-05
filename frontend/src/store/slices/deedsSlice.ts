@@ -8,7 +8,6 @@ interface DeedsState {
     currentDeed: GoodDeed | null;
     loading: boolean;
     error: string | null;
-    validationErrors: string[] | null;
 }
 
 const initialState: DeedsState = {
@@ -16,7 +15,6 @@ const initialState: DeedsState = {
     currentDeed: null,
     loading: false,
     error: null,
-    validationErrors: null
 }
 
 export const fetchMyDeeds = createAsyncThunk(
@@ -105,7 +103,6 @@ const deedsSlice = createSlice({
         },
         clearError: (state) => {
             state.error = null;
-            state.validationErrors = null;
         }
     },
     extraReducers: (builder) => {
@@ -127,16 +124,14 @@ const deedsSlice = createSlice({
         });
 
         builder.addCase(createDeed.pending, (state) => {
-            state.validationErrors = null;
             state.error = null;
         });
         builder.addCase(createDeed.fulfilled, (state, action) => {
             state.deeds.unshift(action.payload);
-            state.validationErrors = null;
         });
         builder.addCase(createDeed.rejected, (state, action: any) => {
             if(action.payload?.type === 'validation') {
-                state.validationErrors = action.payload.errors;
+                //state.validationErrors = action.payload.errors;
             }
             else {
                 state.error = action.payload?.message || 'Ошибка создания дела';
@@ -144,7 +139,6 @@ const deedsSlice = createSlice({
         });
 
         builder.addCase(updateDeed.pending, (state) => {
-            state.validationErrors = null;
             state.error = null;
         });
         builder.addCase(updateDeed.fulfilled, (state, action) => {
@@ -152,11 +146,10 @@ const deedsSlice = createSlice({
             if(index !== -1) state.deeds[index] = action.payload;
 
             state.currentDeed = action.payload;
-            state.validationErrors = null;
         });
         builder.addCase(updateDeed.rejected, (state, action: any) => {
             if(action.payload?.type === 'validation') {
-                state.validationErrors = action.payload.errors;
+                //state.validationErrors = action.payload.errors;
             }
             else {
                 state.error = action.payload?.message || 'Ошибка обновления дела';

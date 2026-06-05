@@ -6,20 +6,41 @@ import { useRouter } from 'next/navigation';
 import { RootState, AppDispatch } from '@/store';
 import { fetchProfile, updateProfile, deleteProfile, clearError } from '@/store/slices/profileSlice';
 import { updateUserData } from '@/store/slices/authSlice';
+import { updateProfileSchema } from '@/lib/validation';
+import { useFormValidation } from '@/hooks/useFormValidation';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 
 export default function ProfilePage() {
     const dispatch = useDispatch<AppDispatch>();
     const router = useRouter();
-    const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
-    const { profile, loading, error, validationErrors } = useSelector((state: RootState) => state.profile);
+    const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+    const { profile, loading, error, serverValidationErrors } = useSelector((state: RootState) => state.profile);
 
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [name, setName] = useState('');
     const [password, setPassword] = useState('');
     const [isEditing, setIsEditing] = useState(false);
+
+    const { getFieldError: getZodError, validate, clearErrors } = useFormValidation({
+        schema: updateProfileSchema,
+        onSuccess: async (data) => {
+            const result = await dispatch(updateProfile({
+                username: data.username,
+                email: data.email,
+                name: data.name,
+                password: data.password || undefined
+            }));
+            if(updateProfile.fulfilled.match(result)) {
+                dispatch(updateUserData(result.payload));
+                setIsEditing(false);
+                setPassword('');
+                dispatch(clearError());
+                clearErrors();
+            }
+        }
+    });
 
     useEffect(() => {
         if (!isAuthenticated) {
@@ -39,18 +60,16 @@ export default function ProfilePage() {
         }
     }, [profile]);
 
+    const getFieldError = (field: string): string | undefined => {
+        if (serverValidationErrors && serverValidationErrors[field]) return serverValidationErrors[field];
+
+        return getZodError(field);
+    }
+
     const handleSubmit = async (e: React.SubmitEvent) => {
         e.preventDefault();
-        const data: any = { username, email, name };
-        if (password) data.password = password;
-
-        const result = await dispatch(updateProfile(data));
-        if (updateProfile.fulfilled.match(result)) {
-            dispatch(updateUserData(result.payload));
-            setIsEditing(false);
-            setPassword('');
-            dispatch(clearError());
-        }
+        dispatch(clearError());
+        validate({ username, email, name, password });
     };
 
     const handleDelete = async () => {
@@ -58,21 +77,6 @@ export default function ProfilePage() {
             await dispatch(deleteProfile());
             router.push('/');
         }
-    };
-
-    const getFieldError = (field: string): string | undefined => {
-        if (!validationErrors || validationErrors.length === 0) return undefined;
-
-        const error = validationErrors.find(e => e.toLowerCase().startsWith(field.toLowerCase() + ' '));
-        if (!error) return undefined;
-        if (error.includes('already exists')) {
-            return 'Уже используется';
-        }
-        if (error.includes('longer than or equal to')) {
-            const min = error.match(/\d+/)?.[0];
-            return `Минимальная длина: ${min} символов`;
-        }
-        return 'Ошибка валидации';
     };
 
     return (
@@ -99,6 +103,7 @@ export default function ProfilePage() {
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                        error={getFieldError('email')}
                         disabled={!isEditing}
                         required />
 
@@ -107,6 +112,7 @@ export default function ProfilePage() {
                         type='text'
                         value={name}
                         onChange={(e) => setName(e.target.value)}
+                        error={getFieldError('name')}
                         disabled={!isEditing}
                         required />
 
@@ -129,6 +135,7 @@ export default function ProfilePage() {
                                     setIsEditing(false);
                                     setPassword('');
                                     dispatch(clearError());
+                                    clearErrors();
                                     if (profile) {
                                         setUsername(profile.username);
                                         setEmail(profile.email);
@@ -141,7 +148,7 @@ export default function ProfilePage() {
 
                 {!isEditing && (
                     <div className='flex gap-3 mt-6'>
-                        <Button type='button' onClick={() => setIsEditing(true)}>Редактировать</Button>
+                        <Button type='button' onClick={() => { dispatch(clearError()); clearErrors(); setIsEditing(true) }}>Редактировать</Button>
                     </div>
                 )}
 

@@ -3,6 +3,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { register, clearError } from "@/store/slices/authSlice";
 import { AppDispatch, RootState } from "@/store";
 import { useRouter } from "next/navigation";
+import { registerSchema } from '@/lib/validation';
+import { useFormValidation } from '@/hooks/useFormValidation';
 import Link from "next/link";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
@@ -17,52 +19,29 @@ export default function RegisterForm() {
 
     const dispatch = useDispatch<AppDispatch>();
     const router = useRouter();
-    const { loading, error, validationErrors } = useSelector((state: RootState) => state.auth);
+    const { loading, error } = useSelector((state: RootState) => state.auth);
 
     useEffect(() => {
         dispatch(clearError());
     }, [dispatch]);
 
-    const getFieldError = (field: string): string | undefined => {
-        if (!validationErrors || validationErrors.length === 0) return undefined;
-
-        const error = validationErrors.find(e => {
-            const lowerError = e.toLowerCase();
-            if (lowerError.startsWith(field.toLowerCase() + ' ')) {
-                return true;
+    const { getFieldError, validate } = useFormValidation ({
+        schema: registerSchema,
+        onSuccess: async (data) => {
+            if(password !== confirmPassword) {
+                setLocalError('Пароли не совпадают');
+                return;
             }
-            return false;
-        });
 
-        if (!error) return undefined;
-
-        if (error.includes('longer than or equal to')) {
-            const min = error.match(/\d+/)?.[0];
-            return `Минимальная длина: ${min} символов`;
+            setLocalError('');
+            const result = await dispatch(register(data));
+            if(register.fulfilled.match(result)) router.push('dashboard');
         }
-        if (error.includes('shorter than or equal to')) {
-            const max = error.match(/\d+/)?.[0];
-            return `Максимальная длина: ${max} символов`;
-        }
-        if (error.includes('should not be empty')) {
-            return 'Обязательное поле';
-        }
-        if (error.includes('must be an email')) {
-            return 'Некорректный email';
-        }
-
-        return 'Ошибка валидации';
-    };
+    });
 
     const handleSubmit = async (e: React.SubmitEvent) => {
         e.preventDefault();
-        dispatch(clearError());
-        setLocalError('');
-
-        if (password !== confirmPassword) {
-            setLocalError('Пароли не совпадают');
-            return;
-        }
+        validate({ username, email, name, password });
 
         const result = await dispatch(register({ username, email, name, password }));
         if (register.fulfilled.match(result)) router.push('/dashboard');

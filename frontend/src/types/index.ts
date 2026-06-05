@@ -20,7 +20,6 @@ export interface GoodDeed {
         username: string;
         name: string;
     };
-    validationErrors: string[] | null;
 }
 
 export interface AuthState {
@@ -30,5 +29,4 @@ export interface AuthState {
     loading: boolean;
     error: string | null;
     initialized: boolean;
-    validationErrors: string[] | null;
 }

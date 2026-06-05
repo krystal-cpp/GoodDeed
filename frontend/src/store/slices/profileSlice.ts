@@ -8,14 +8,14 @@ interface ProfileState {
     profile: User | null;
     loading: boolean;
     error: string | null;
-    validationErrors: string[] | null;
+    serverValidationErrors: Record<string, string> | null;
 }
-
+    
 const initialState: ProfileState = {
     profile: null,
     loading: false,
     error: null,
-    validationErrors: null,
+    serverValidationErrors: null,
 };
 
 export const fetchProfile = createAsyncThunk('profile/fetchProfile', async () => {
@@ -33,8 +33,16 @@ export const updateProfile = createAsyncThunk(
         catch (err) {
             if (axios.isAxiosError(err) && err.response) {
                 const errorData = err.response.data;
-                if (Array.isArray(errorData.message)) {
-                    return rejectWithValue({ type: 'validation', errors: errorData.message });
+
+                const message = errorData.message || '';
+
+                if(typeof message === 'string') {
+                    const fieldsErrors: Record<string, string> = {};
+                    if(message.toLowerCase().includes('username')) fieldsErrors.username = 'Это имя пользователя уже занято';
+
+                    if(message.toLowerCase().includes('email')) fieldsErrors.email = 'Этот email уже используется';
+
+                    if(Object.keys(fieldsErrors).length > 0) return rejectWithValue({ type: 'validation', errors: fieldsErrors });
                 }
                 return rejectWithValue({ type: 'general', message: errorData.message || 'Ошибка обновления' });
             }
@@ -57,7 +65,7 @@ const profileSlice = createSlice({
     reducers: {
         clearError: (state) => {
             state.error = null;
-            state.validationErrors = null;
+            state.serverValidationErrors = null;
         },
     },
     extraReducers: (builder) => {
@@ -76,35 +84,19 @@ const profileSlice = createSlice({
         builder.addCase(updateProfile.pending, (state) => {
             state.loading = true;
             state.error = null;
-            state.validationErrors = null;
+            state.serverValidationErrors = null;
         });
         builder.addCase(updateProfile.fulfilled, (state, action) => {
             state.loading = false;
             state.profile = action.payload;
-
-            // if(typeof window !== 'undefined') {
-            //     const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-            //     const updatedUser = { ...currentUser, ...action.payload };
-            //     localStorage.setItem('user', JSON.stringify(updatedUser));
-            //     window.dispatchEvent(new Event('userUpdated'));
-            // }
         });
         builder.addCase(updateProfile.rejected, (state, action: any) => {
             state.loading = false;
             if(action.payload?.type === 'validation') {
-                state.validationErrors = action.payload.errors;
+                state.serverValidationErrors = action.payload.errors;
             }
             else {
-                const message = action.payload?.message || 'Ошибка обновления профиля';
-                if(message.toLowerCase().includes('username')) {
-                    state.validationErrors = ['username ' + message];
-                }
-                else if (message.toLowerCase().includes('email')) {
-                    state.validationErrors = ['email ' + message];
-                }
-                else {
-                    state.error = message;
-                }
+                state.error = action.payload?.message || 'Ошибка обноваления профиля';
             }
         });
     }

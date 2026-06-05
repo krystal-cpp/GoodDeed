@@ -3,6 +3,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { login, clearError } from "@/store/slices/authSlice";
 import { AppDispatch, RootState } from "@/store";
 import { useRouter } from "next/navigation";
+import { loginSchema } from "@/lib/validation";
+import { useFormValidation } from "@/hooks/useFormValidation";
 import Link from "next/link";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
@@ -18,12 +20,17 @@ export default function LoginForm() {
         dispatch(clearError());
     }, [dispatch]);
 
+    const { getFieldError, validate } = useFormValidation({
+        schema: loginSchema,
+        onSuccess: async (data) => {
+            const result = await dispatch(login(data));
+            if(login.fulfilled.match(result)) router.push('/dashboard');
+        }
+    });
+
     const handleSubmit = async (e: React.SubmitEvent) => {
         e.preventDefault();
-        dispatch(clearError());
-
-        const result = await dispatch(login({ username, password }));
-        if (login.fulfilled.match(result)) router.push('/dashboard');
+        validate({ username, password });
     };
 
     return (
@@ -43,13 +50,15 @@ export default function LoginForm() {
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         required
-                        placeholder="Введите username" />
+                        placeholder="Введите username"
+                        error={getFieldError('username')} />
                     <Input label='Пароль'
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
-                        placeholder="Введите пароль" />
+                        placeholder="Введите пароль"
+                        error={getFieldError('password')} />
                     <div className='flex justify-center mt-4'>
                         <Button type='submit' loading={loading} className='w-full mt-4'>Войти</Button>
                     </div>

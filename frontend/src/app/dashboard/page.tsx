@@ -14,7 +14,7 @@ export default function DashboardPage() {
     const dispatch = useDispatch<AppDispatch>();
     const router = useRouter();
     const { isAuthenticated } = useSelector((state: RootState) => state.auth);
-    const { deeds, loading, validationErrors } = useSelector((state: RootState) => state.goodDeeds);
+    const { deeds, loading } = useSelector((state: RootState) => state.goodDeeds);
 
     const [modalOpen, setModalOpen] = useState(false);
     const [editingDeed, setEditingDeed] = useState<GoodDeed | null>(null);
@@ -116,7 +116,6 @@ export default function DashboardPage() {
                         setModalOpen(false);
                         dispatch(clearDeedError());
                     }}
-                    errors={validationErrors}
                     onSubmit={handleCreate}
                     loading={loading} />
 
@@ -126,7 +125,6 @@ export default function DashboardPage() {
                         setEditingDeed(null);
                         dispatch(clearDeedError());
                     }}
-                    errors={validationErrors}
                     onSubmit={handleUpdate}
                     deed={editingDeed}
                     loading={loading} />
