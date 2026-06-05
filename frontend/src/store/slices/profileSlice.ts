@@ -82,12 +82,12 @@ const profileSlice = createSlice({
             state.loading = false;
             state.profile = action.payload;
 
-            if(typeof window !== 'undefined') {
-                const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-                const updatedUser = { ...currentUser, ...action.payload };
-                localStorage.setItem('user', JSON.stringify(updatedUser));
-                window.dispatchEvent(new Event('userUpdated'));
-            }
+            // if(typeof window !== 'undefined') {
+            //     const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+            //     const updatedUser = { ...currentUser, ...action.payload };
+            //     localStorage.setItem('user', JSON.stringify(updatedUser));
+            //     window.dispatchEvent(new Event('userUpdated'));
+            // }
         });
         builder.addCase(updateProfile.rejected, (state, action: any) => {
             state.loading = false;

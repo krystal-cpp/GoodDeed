@@ -5,13 +5,14 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { RootState, AppDispatch } from '@/store';
 import { fetchProfile, updateProfile, deleteProfile, clearError } from '@/store/slices/profileSlice';
+import { updateUserData } from '@/store/slices/authSlice';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 
 export default function ProfilePage() {
     const dispatch = useDispatch<AppDispatch>();
     const router = useRouter();
-    const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+    const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
     const { profile, loading, error, validationErrors } = useSelector((state: RootState) => state.profile);
 
     const [username, setUsername] = useState('');
@@ -45,6 +46,7 @@ export default function ProfilePage() {
 
         const result = await dispatch(updateProfile(data));
         if (updateProfile.fulfilled.match(result)) {
+            dispatch(updateUserData(result.payload));
             setIsEditing(false);
             setPassword('');
             dispatch(clearError());

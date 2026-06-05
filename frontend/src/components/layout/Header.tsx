@@ -8,26 +8,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function Header() {
-    const { isAuthenticated, initialized } = useSelector((state: RootState) => state.auth);
+    const { isAuthenticated, user, initialized } = useSelector((state: RootState) => state.auth);
     const dispatch = useDispatch();
     const router = useRouter();
-    const [userName, setUserName] = useState('');
-
-    const updateUserName = () => {
-        if(typeof window !== 'undefined') {
-            const userStr = localStorage.getItem('user');
-            if(userStr) {
-                const user = JSON.parse(userStr);
-                setUserName(user.name || '');
-            }
-        }
-    };
-    
-    useEffect(() => {
-        updateUserName();
-        window.addEventListener('userUpdated', updateUserName);
-        return () => window.removeEventListener('userUpdated', updateUserName);
-    }, [isAuthenticated]);
 
     const handleLogout = () => {
         dispatch(logout());
@@ -63,7 +46,7 @@ export default function Header() {
                             </Link>
                             
                             <div className='flex items-center gap-4'>
-                                <span className='text-base text-gray-500'>{userName}</span>
+                                <span className='text-base text-gray-500'>{user?.name}</span>
                                 <button onClick={handleLogout} className='text-red-500 hover:text-red-700 transition-colors'>Выйти</button>
                             </div>
                         </>
